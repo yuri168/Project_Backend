@@ -3,9 +3,44 @@ var mysql = require('mysql')
 var app = express();
 var bodyparser = require('body-parser');
 var cors = require('cors');
+// var upload = require('express-fileupload')
 
+const multer = require('multer');
+const uuidv4 = require('uuid/v4');
+const path = require('path');
+
+// app.use(upload())
 app.use(cors());
 app.use(bodyparser.json())
+
+
+//==================================================================================================
+// configure storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        /*
+          Files will be saved in the 'img' directory. Make
+          sure this directory already exists!
+        */
+        cb(null, './img');
+    },
+    filename: (req, file, cb) => {
+        /*
+          uuidv4() will generate a random ID that we'll use for the
+          new filename. We use path.extname() to get
+          the extension from the original file name and add that to the new
+          generated ID. These combined will create the file name used
+          to save the file on the server and will be available as
+          req.file.pathname in the router handler.
+        */
+        const newFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+        cb(null, newFilename);
+    },
+});
+// create the multer instance that will be used to upload/save the file
+const upload = multer({ storage });
+
+//=========================================================================================
 
 var db = mysql.createConnection({
     host: 'localhost',
@@ -45,25 +80,24 @@ app.post("/userLogin", (req, res) => {
     db.query("SELECT iduser, name, password FROM user WHERE ? AND ?", [{ name: req.body.name },
     { password: req.body.password, }],
         (err, result) => {
-            // console.log(result)
             if (err) throw err;
 
             let loginstatus
             let iduser
-            let name
+            let nama
 
             if (result.length > 0) {
                 loginstatus = true;
-                name = req.body.username;
+                nama = result[0].name;
                 iduser = result[0].iduser;
             }
             else {
                 loginstatus = false;
-                name = null;
+                nama = null;
                 iduser = null;
             }
 
-            res.send({ loginstatus, name, iduser });
+            res.send({ loginstatus, nama, iduser });
 
         })
 })
@@ -85,8 +119,8 @@ app.post('/addCart', (req, res) => {
     db.query(addpost, data, (err, result) => {
         if (err) throw err;
         // console.log(result);
-        var anjay = 'sukses'
-        res.send(anjay)
+        var berhasil = 'sukses'
+        res.send(berhasil)
     })
 
 })
@@ -317,21 +351,7 @@ app.get('/bodyadmin', (req, res) => {
 
 // ini admin add -------------------------------------------------------------------------------------------
 
-app.post("/addProduct",(req,res)=>{
-    var data = {
-        namaprod: req.body.nama,
-        desc: req.body.describ,
-        stock: req.body.jumlah,
-        harga: req.body.harga,
-        status: "active"
-    }
-    var adduser = 'INSERT INTO product set ?'
-    db.query(adduser, data, (err, result) => {
-        if (err) throw err;
-        var anjay = 'sukses'
-        res.send(anjay)
-    })
-})
+
 
 // update admin -------------------------------------------------------------------------------------------
 
@@ -403,6 +423,80 @@ app.get("/detailadmin/:id", (req, res) => {
         })
 })
 
+// uploadgambar ---------------------------------------------------------------------------------------
+
+
+
+app.post('/addProduct', (req, res) => {
+    var data = {
+        namaprod: req.body.nama, 
+        desc: req.body.describ,
+        stock: req.body.jumlah,
+        harga: req.body.harga,
+        status: "success"
+    }
+    var add = 'INSERT INTO product set ?'
+    db.query(add, data, (err, result) => {
+        if (err) throw err;
+        var anjay = 'sukses'
+        res.send(anjay)
+    })
+});
+// upload --------------------------------------------------------------------------------------------
+
+app.post('/gambar', upload.single('userfile'), (req, res) => {
+var get = `select * from product where ?`
+var nama = {namaprod: req.body.nama}
+db.query(get,nama,(err, result1)=> {
+    if (err) throw err;
+    // console.log(result1)
+    if (!req.file) {
+        
+        var data2 = {status: "success"}
+        var sql1 = `update product set (img) values ('default.jpg') where ?`
+        db.query(sql1,data2,
+            function (err, result2) {
+                if (err) throw err;
+                // console.log(result2)
+
+                var data3 = [{status: "active"},{status: "success"}]
+                var sql1 = `update product set ? where ?`
+                    db.query(sql1,data3,
+                    function (err, result3) {
+                    if (err) throw err;
+
+                    // console.log(result3)
+                    var a = 'sukses'
+                res.send(a)
+                
+                    })
+            })
+    }
+    else{
+        
+    var data1 = [{img: req.file.filename},{status: "success"}]
+    var sql1 = `update product set ? where ?;`
+    db.query(sql1, data1,
+        function (err, result4) {
+            if (err) throw err;
+            // console.log(result4)
+
+            var data5 = [{status: "active"},{status: "success"}]
+            var sql1 = `update product set ? where ?`
+                db.query(sql1,data5,
+                function (err, result5) {
+                if (err) throw err;
+                // console.log(result5)
+                var a = 'sukses'
+                res.send(a)
+                })
+
+        })
+    // console.log(req.file.filename)
+    }
+
+})
+});
 // ini port -------------------------------------------------------------------------------------------
 
 app.listen(3222, () => {
