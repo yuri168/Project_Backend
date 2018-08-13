@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
           Files will be saved in the 'img' directory. Make
           sure this directory already exists!
         */
-        cb(null, './img');
+        cb(null, '../project/public/image');
     },
     filename: (req, file, cb) => {
         /*
@@ -50,11 +50,21 @@ var db = mysql.createConnection({
 });
 db.connect();
 
+// ini produk kategori ---------------------------------------------------------------------------------------
+
+app.get('/kategori',(req,res)=>{
+    var kategori = `SELECT * FROM kategori`
+    db.query(kategori, (err, result)=>{
+        if (err) throw err;
+        res.send(result)
+    })
+})
+
 // ini product body -------------------------------------------------------------------------------------------
 
-app.get('/body', (req, res) => {
-    var data = { status: "active"}
-    var sqlget = 'SELECT * FROM product where ?';
+app.get('/body/:id', (req, res) => {
+    var data = [{ status: "active"},{ idkategoriproduct: req.params.id }]
+    var sqlget = 'SELECT * FROM product where ? AND ?';
     db.query(sqlget,data, (err, result) => {
         if (err) throw err;
         // console.log(result);
@@ -241,7 +251,6 @@ app.post("/Checkout", function (req, res) {
                         harga: x.harga
                     })
 
-
                 db.query("SELECT stock FROM product WHERE ?",
                     {
                         idprod: x.idproductcart
@@ -281,6 +290,7 @@ app.post("/Checkout", function (req, res) {
     var redirect_invoice = "OK";
     res.send({ redirect_invoice, kode_invoice });
 })
+
 // ini signUp -------------------------------------------------------------------------------------------
 
 app.post("/SignIn", (req, res) => {
@@ -309,6 +319,19 @@ app.get("/MyProfile/:id", (req, res) => {
     })
 
 })
+
+// ini profile -----------------------------------------------------------------------------------------
+
+app.get("/Profile/:id", (req, res) => {
+    var data = {iduser: req.params.id}
+    var prof = 'SELECT * FROM user WHERE ?'
+
+    db.query(prof, data, (err, result) => {
+        if (err) throw err;
+        res.send(result);
+    })
+})
+
 
 // ini detail -------------------------------------------------------------------------------------------
 
@@ -340,17 +363,13 @@ app.get("/search/:caris", (req,res)=>{
 
 app.get('/bodyadmin', (req, res) => {
     var data = { status: "active"}
-    var sqlget = 'SELECT * FROM product where ?';
+    var sqlget = 'SELECT * FROM product join kategori on product.idkategoriproduct = kategori.idkategori where ?';
     db.query(sqlget,data, (err, result) => {
         if (err) throw err;
         // console.log(result);
         res.send(result);
     });
 });
-
-
-// ini admin add -------------------------------------------------------------------------------------------
-
 
 
 // update admin -------------------------------------------------------------------------------------------
@@ -424,22 +443,20 @@ app.get("/detailadmin/:id", (req, res) => {
 })
 
 // uploadgambar ---------------------------------------------------------------------------------------
-
-
-
 app.post('/addProduct', (req, res) => {
     var data = {
         namaprod: req.body.nama, 
         desc: req.body.describ,
         stock: req.body.jumlah,
         harga: req.body.harga,
+        idkategoriproduct: req.body.kategori,
         status: "success"
     }
     var add = 'INSERT INTO product set ?'
     db.query(add, data, (err, result) => {
         if (err) throw err;
-        var anjay = 'sukses'
-        res.send(anjay)
+        var berhasil = 'sukses'
+        res.send(berhasil)
     })
 });
 // upload --------------------------------------------------------------------------------------------
@@ -497,6 +514,67 @@ db.query(get,nama,(err, result1)=> {
 
 })
 });
+// ini kategori ---------------------------------------------------------------------------------------
+
+app.get('/kategori',(req,res)=>{
+    var kategori = 'SELECT * FROM kategori'
+
+    db.query(kategori, (err, result) => {
+        if (err) throw err;
+        res.send(result);
+    })
+})
+
+// ini add kategori -----------------------------------------------------------------------------------
+
+app.post('/addkategori',(req,res)=>{
+    var data = {
+        namakategori : req.body.nama
+    }
+    var addkategori = 'INSERT INTO kategori set ?'
+
+    db.query(addkategori,data, (err, result) => {
+        if (err) throw err;
+        var a = 'sukses'
+                res.send(a);
+    })
+})
+// delete kategori ------------------------------------------------------------------------------------
+
+app.post('/kategoriDelete', (req, res) => {
+    var data = 
+        {
+            idkategori: req.body.idkategori
+        }
+    // console.log(data) 
+    var setdelet = `DELETE FROM kategori where ?`
+    db.query(setdelet, data, (err, result) => {
+        if (err) throw err;
+
+        res.send(result);
+    })
+})
+// edit kategori --------------------------------------------------------------------------------------
+
+app.post('/editkategori/:id',(req , res)=>{
+    var data = [
+        {
+            namakategori: req.body.nama
+        },
+        {
+            idkategori: req.params.id
+        }
+    ]
+    // console.log(data) 
+    var updatekategori = `update kategori set ? where ?`
+    db.query(updatekategori, data, (err, result) => {
+        if (err) throw err;
+
+        var a = 'sukses'
+                res.send(a);
+    })
+})
+
 // ini port -------------------------------------------------------------------------------------------
 
 app.listen(3222, () => {
