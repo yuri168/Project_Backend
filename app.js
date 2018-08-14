@@ -575,6 +575,14 @@ app.post('/editkategori/:id',(req , res)=>{
     })
 })
 
+app.get('/searchbyKTG/:id',(req,res)=>{
+    var id = {idkategori: req.params.id}
+    var sqlget = 'SELECT * FROM product join kategori on product.idkategoriproduct = kategori.idkategori where ?';
+    db.query(sqlget,id,(err,result)=>{
+        res.send(result);
+    })
+})
+
 // ini port -------------------------------------------------------------------------------------------
 
 app.listen(3222, () => {
