@@ -41,9 +41,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 //=========================================================================================
+//mysql itu Obj  - CreateConnet Method dari MYSQL <=== karena dia function didlama obj
+
+//db sebuah obj
 
 var db = mysql.createConnection({
-    host: 'localhost',
+    host: 'localhost', // parameternya  = obj
     user: 'root',
     password: 'password',
     database: 'project'
@@ -261,7 +264,7 @@ app.post("/Checkout", function (req, res) {
                                     stock: row4[0].stock - x.qtycart
                                 },
                                 {
-                                    idprod: x.idproductcart
+                                    idprod: x.namaprod
                                 }
                             ]), (err, rslt) => {
                                 if (err) throw err;
@@ -574,7 +577,7 @@ app.post('/editkategori/:id',(req , res)=>{
                 res.send(a);
     })
 })
-
+// search by kategori ----------------------------------------------------------------------------------
 app.get('/searchbyKTG/:id',(req,res)=>{
     var id = {idkategori: req.params.id}
     var sqlget = 'SELECT * FROM product join kategori on product.idkategoriproduct = kategori.idkategori where ?';
@@ -582,6 +585,16 @@ app.get('/searchbyKTG/:id',(req,res)=>{
         res.send(result);
     })
 })
+
+// reporting --------------------------------------------------------------------------------------------
+
+app.post('/reporting',(req,res)=>{
+    var url = `SELECT codeinv, namapenerima, alamatpenerima, nopenerima, total, time from invoice where time between '${req.body.dateAwal}' and '${req.body.dateAkhir}'`
+    db.query(url, (err,result)=>{
+        console.log(result)
+        res.send(result)
+    })
+} )
 
 // ini port -------------------------------------------------------------------------------------------
 
